@@ -136,7 +136,8 @@ public class CCGConfig {
 		public enum TorqueAxis {
 			WORLD_Y,
 			VIEW,
-			HIT_FACE
+			HIT_FACE,
+			DRAG_START_FACE
 		}
 		@Category public ForceOverlay forceOverlay = new ForceOverlay();
 		public static class ForceOverlay {

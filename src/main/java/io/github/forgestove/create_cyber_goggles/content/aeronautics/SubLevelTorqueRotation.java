@@ -47,6 +47,8 @@ public final class SubLevelTorqueRotation {
 	private static @Nullable PendingPulse pending;
 	private static boolean staffWasDown;
 	private static @Nullable Vector3d staffAxis;
+	private static @Nullable UUID dragStartFaceSubLevel;
+	private static @Nullable Vector3d dragStartFaceLocal;
 
 	private SubLevelTorqueRotation() {}
 
@@ -135,6 +137,30 @@ public final class SubLevelTorqueRotation {
 	}
 
 	/**
+	 * 记录进入物理杖拖动前指向的方块面。
+	 * <p>
+	 * 这里保存的是子世界局部坐标下的面方向；旋转时再用当前 pose 转成世界坐标，
+	 * 这样结构转动后仍然围绕同一个面旋转。
+	 */
+	public static void captureDragStartFace(SubLevel target, Direction face) {
+		dragStartFaceSubLevel = target.getUniqueId();
+		dragStartFaceLocal = new Vector3d(face.getStepX(), face.getStepY(), face.getStepZ()).normalize();
+	}
+
+	public static void clearDragStartFace() {
+		dragStartFaceSubLevel = null;
+		dragStartFaceLocal = null;
+	}
+
+	private static @Nullable Vector3d getDragStartAxis(SubLevel target) {
+		if (dragStartFaceLocal == null || dragStartFaceSubLevel == null
+			|| !dragStartFaceSubLevel.equals(target.getUniqueId())) return null;
+		Vector3d normal = new Vector3d(dragStartFaceLocal);
+		target.logicalPose().transformNormal(normal);
+		return normal.normalize();
+	}
+
+	/**
 	 * 物理杖拖动中的按键旋转。
 	 * <p>
 	 * 只有在 {@code PhysicsStaffClientHandler} 已经有 {@link ClientDragSession} 时才会生效；
@@ -160,7 +186,12 @@ public final class SubLevelTorqueRotation {
 			return true;
 		}
 		Vector3d axis;
-		if (CCG.config.aeronautics.torqueAxis == TorqueAxis.HIT_FACE) {
+		if (CCG.config.aeronautics.torqueAxis == TorqueAxis.DRAG_START_FACE) {
+			// 使用进入拖动前指向的面；每 tick 用当前 pose 重新转换法线
+			staffAxis = null;
+			axis = getDragStartAxis(session.dragSubLevel());
+			if (axis == null) axis = getAxis(player, null);
+		} else if (CCG.config.aeronautics.torqueAxis == TorqueAxis.HIT_FACE) {
 			// 按住时锁定为按下瞬间指向方块面的法线，避免拖动过程中轴向抖动
 			if (pressed || staffAxis == null) {
 				BlockHitResult hit = getTargetHit(player);
@@ -173,6 +204,7 @@ public final class SubLevelTorqueRotation {
 			}
 			axis = staffAxis;
 		} else {
+			staffAxis = null;
 			axis = getAxis(player, null);
 		}
 		double degrees = CCG.config.aeronautics.staffRotateDegreesPerTick;
@@ -217,7 +249,10 @@ public final class SubLevelTorqueRotation {
 	private static Vector3d getAxis(LocalPlayer player, @Nullable Vector3d faceNormal) {
 		return switch (CCG.config.aeronautics.torqueAxis) {
 			case VIEW -> JOMLConversion.toJOML(player.getLookAngle()).normalize();
-			case HIT_FACE -> faceNormal != null ? new Vector3d(faceNormal).normalize() : new Vector3d(0, 1, 0);
+			// 拳击回退没有拖动会话，DRAG_START_FACE 退化为当前命中面
+			case HIT_FACE, DRAG_START_FACE -> faceNormal != null
+				? new Vector3d(faceNormal).normalize()
+				: new Vector3d(0, 1, 0);
 			case WORLD_Y -> new Vector3d(0, 1, 0);
 		};
 	}
