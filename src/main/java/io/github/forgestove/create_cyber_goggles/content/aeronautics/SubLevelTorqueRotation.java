@@ -6,6 +6,9 @@ import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.network.packets.tcp.ServerboundPunchSubLevelPacket;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
+import dev.simulated_team.simulated.SimulatedClient;
+import dev.simulated_team.simulated.content.physics_staff.PhysicsStaffClientHandler.ClientDragSession;
+import dev.simulated_team.simulated.content.physics_staff.PhysicsStaffItem;
 import io.github.forgestove.create_cyber_goggles.CCG;
 import io.github.forgestove.create_cyber_goggles.foundation.events.CCGKey;
 import net.minecraft.client.player.LocalPlayer;
@@ -14,8 +17,10 @@ import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult.Type;
-import net.neoforged.neoforge.client.event.ClientTickEvent.Post;
+import net.neoforged.neoforge.client.event.ClientTickEvent.Pre;
 import org.jetbrains.annotations.Nullable;
+import org.joml.AxisAngle4d;
+import org.joml.Quaterniond;
 import org.joml.Vector3d;
 
 import java.util.UUID;
@@ -23,14 +28,15 @@ import java.util.UUID;
 import static io.github.forgestove.create_cyber_goggles.foundation.util.CCGUtil.mc;
 
 /**
- * 通过 Sable 的拳击冲量在物理结构上施加偏心力矩，实现无需物理杖的旋转。
+ * 物理结构旋转控制器。
  * <p>
- * 服务端处理 {@link ServerboundPunchSubLevelPacket} 时只校验玩家是否站在地面/水中/飞行/爬梯，
- * 以及拳击冷却，并不校验命中点是否真实、距离是否合理。因此客户端可以构造一个偏离质心的
- * 冲量来产生角动量。
+ * 默认走物理杖的原有逻辑：玩家先右键进入拖动模式，再由本类在拖动会话中按键修改
+ * {@link ClientDragSession#dragOrientation()}，由 {@code PhysicsStaffClientHandler} 每 tick
+ * 发送 {@code PhysicsStaffDragPacket}，服务端再用角轴马达旋转结构。
  * <p>
- * 单次按下会发送两个方向相反、作用点也相反的冲量：第一次产生角动量和少量线速度，
- * 第二次在冷却结束后抵消线速度并叠加角动量，尽量让结构接近原地旋转。
+ * 如果玩家没有进入拖动，并且开启了 {@code enablePunchTorqueFallback}，则退化为 Sable 拳击包。
+ * 拳击包只校验玩家是否站在地面/水中/飞行/爬梯以及冷却，不校验命中点，因此可以用偏心冲量
+ * 产生角动量；但大结构受质量/惯量限制，效果远不如物理杖的角马达。
  */
 public final class SubLevelTorqueRotation {
 	private static boolean wasDown;
@@ -40,7 +46,7 @@ public final class SubLevelTorqueRotation {
 
 	private SubLevelTorqueRotation() {}
 
-	public static void tick(Post ignoredEvent) {
+	public static void tick(Pre ignoredEvent) {
 		tick++;
 		LocalPlayer player = mc.player;
 		if (player == null || mc.level == null) {
@@ -64,12 +70,24 @@ public final class SubLevelTorqueRotation {
 			}
 		}
 		boolean down = CCGKey.torqueRotate.isDown();
+		if (!CCG.config.aeronautics.enableTorqueRotation) {
+			wasDown = down;
+			return;
+		}
+		// 有物理杖拖动会话时只走拖动旋转，不再发拳击包
+		if (handleStaffDragRotation(player, down)) {
+			wasDown = down;
+			return;
+		}
+		if (!CCG.config.aeronautics.enablePunchTorqueFallback) {
+			wasDown = down;
+			return;
+		}
 		boolean pressed = down && !wasDown;
 		wasDown = down;
 		if (!down || mc.screen != null) return;
 		// 按住时按固定间隔连发；单击则立即触发
 		if (!pressed && tick < nextPulseTick) return;
-		if (!CCG.config.aeronautics.enableTorqueRotation) return;
 		// 上一组还没完成时忽略新的脉冲，避免线速度没有被抵消
 		if (pending != null || !canPunch(player)) return;
 
@@ -108,6 +126,30 @@ public final class SubLevelTorqueRotation {
 			// 重结构模式：不抵消线速度，按更短间隔连续施力
 			nextPulseTick = tick + Math.max(1, CCG.config.aeronautics.torqueRepeatTicks);
 		}
+	}
+
+	/**
+	 * 物理杖拖动中的按键旋转。
+	 * <p>
+	 * 只有在 {@code PhysicsStaffClientHandler} 已经有 {@link ClientDragSession} 时才会生效；
+	 * 也就是说玩家必须先自行右键进入拖动模式。修改后的 {@code dragOrientation} 会在
+	 * {@code PhysicsStaffClientHandler.tick()} 中随 drag 包发送给服务端。
+	 *
+	 * @return 如果当前处于物理杖拖动会话中则返回 {@code true}，调用方不再走拳击回退
+	 */
+	private static boolean handleStaffDragRotation(LocalPlayer player, boolean down) {
+		ClientDragSession session = SimulatedClient.PHYSICS_STAFF_CLIENT_HANDLER.getDragSession();
+		if (session == null) return false;
+		if (!CCG.config.aeronautics.enableStaffDragRotation) return true;
+		if (!down || mc.screen != null) return true;
+		if (!PhysicsStaffItem.isHolding(player)) return true;
+		double degrees = CCG.config.aeronautics.staffRotateDegreesPerTick;
+		if (player.isShiftKeyDown()) degrees = -degrees;
+		Vector3d axis = getAxis(player);
+		session.dragOrientation().premul(new Quaterniond(
+			new AxisAngle4d(Math.toRadians(degrees), axis.x, axis.y, axis.z)
+		));
+		return true;
 	}
 
 	/**

@@ -123,6 +123,9 @@ public class CCGConfig {
 		@WarnCheat public boolean alwaysAllowRidingRope = false;
 		@WarnCheat public boolean enablePhysicsStaff = false;
 		@WarnCheat public boolean enableTorqueRotation = false;
+		public boolean enableStaffDragRotation = true;
+		public boolean enablePunchTorqueFallback = false;
+		@DoubleRange(min = 0.1, max = 30) public double staffRotateDegreesPerTick = 1.5;
 		public boolean torqueUseViewAxis = false;
 		@DoubleRange(min = 0.25, max = 4) public double torqueLeverScale = 1.0;
 		@DoubleRange(min = 1, max = 64) public double torqueMaxLever = 16;
