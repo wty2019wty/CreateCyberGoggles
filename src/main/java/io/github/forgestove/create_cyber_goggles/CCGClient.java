@@ -1,4 +1,5 @@
 package io.github.forgestove.create_cyber_goggles;
+import io.github.forgestove.create_cyber_goggles.content.aeronautics.SubLevelTorqueRotation;
 import io.github.forgestove.create_cyber_goggles.content.chainConveyor.ChainConveyorFlowHandler;
 import io.github.forgestove.create_cyber_goggles.content.drafting.*;
 import io.github.forgestove.create_cyber_goggles.content.forceOverlay.*;
@@ -59,6 +60,7 @@ public class CCGClient {
 		CCGMods.simulated.executeIfInstalled(() -> {
 			game.addListener(ForceOverlay::tick);
 			game.addListener(ForceOverlayRenderer::render);
+			game.addListener(SubLevelTorqueRotation::tick);
 		});
 	}
 }

@@ -122,6 +122,12 @@ public class CCGConfig {
 		public boolean customHandleMoveSublevelKey = false;
 		@WarnCheat public boolean alwaysAllowRidingRope = false;
 		@WarnCheat public boolean enablePhysicsStaff = false;
+		@WarnCheat public boolean enableTorqueRotation = false;
+		public boolean torqueUseViewAxis = false;
+		@DoubleRange(min = 0.25, max = 4) public double torqueLeverScale = 1.0;
+		@IntRange(min = 1, max = 20) public int torquePairDelayTicks = 4;
+		@IntRange(min = 1, max = 100) public int torqueRepeatTicks = 10;
+		@IntRange(min = 8, max = 128) public int torqueRange = 64;
 		@Category public ForceOverlay forceOverlay = new ForceOverlay();
 		public static class ForceOverlay {
 			public boolean enableForceOverlay = true;
