@@ -90,18 +90,24 @@ public final class SubLevelTorqueRotation {
 
 		BlockPos blockPos = hit.getBlockPos();
 		sendPunch(player, blockPos, offset, force);
-		pending = new PendingPulse(
-			blockPos,
-			new Vector3d(offset),
-			new Vector3d(force),
-			target.getUniqueId(),
-			tick + Math.max(1, CCG.config.aeronautics.torquePairDelayTicks)
-		);
-		// 连发间隔至少覆盖一次对冲，避免第一组还没完成就发第二组
-		nextPulseTick = tick + Math.max(
-			CCG.config.aeronautics.torqueRepeatTicks,
-			CCG.config.aeronautics.torquePairDelayTicks * 2L
-		);
+		if (CCG.config.aeronautics.torqueCancelLinear) {
+			// 记录第二次反向冲量，用于抵消线速度
+			pending = new PendingPulse(
+				blockPos,
+				new Vector3d(offset),
+				new Vector3d(force),
+				target.getUniqueId(),
+				tick + Math.max(1, CCG.config.aeronautics.torquePairDelayTicks)
+			);
+			// 连发间隔至少覆盖一次对冲，避免第一组还没完成就发第二组
+			nextPulseTick = tick + Math.max(
+				CCG.config.aeronautics.torqueRepeatTicks,
+				CCG.config.aeronautics.torquePairDelayTicks * 2L
+			);
+		} else {
+			// 重结构模式：不抵消线速度，按更短间隔连续施力
+			nextPulseTick = tick + Math.max(1, CCG.config.aeronautics.torqueRepeatTicks);
+		}
 	}
 
 	/**
@@ -149,7 +155,8 @@ public final class SubLevelTorqueRotation {
 			lever = removeAxisComponent(lever, axis);
 			length = lever.length();
 		}
-		double scale = Math.clamp(length, 1.0, 6.0) * CCG.config.aeronautics.torqueLeverScale;
+		double scale = Math.clamp(length, 1.0, CCG.config.aeronautics.torqueMaxLever)
+			* CCG.config.aeronautics.torqueLeverScale;
 		return lever.normalize().mul(scale);
 	}
 
