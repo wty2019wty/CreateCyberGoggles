@@ -399,6 +399,7 @@
 	"create_cyber_goggles.key.stockRequestSetter": "打开仓储请求数量设置界面",
 	"create_cyber_goggles.key.toggleItemOverlay": "切换要显示的物品",
 	"create_cyber_goggles.key.torqueRotate": "扭矩旋转物理结构",
+	"create_cyber_goggles.key.torqueReverse": "反向扭矩旋转",
 	"create_cyber_goggles.key.usePhysicsStaff": "使用物理法杖",
 	"create_cyber_goggles.key.useSchematic": "使用蓝图",
 	"create_cyber_goggles.message.action_progress.baking": "正在烘焙蓝图 %s",

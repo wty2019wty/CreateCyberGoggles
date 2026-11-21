@@ -26,6 +26,7 @@ public enum CCGKey {
 	stockRequestSetter(Type.MOUSE, MOUSE_BUTTON_MIDDLE),
 	toggleItemOverlay(Type.KEYSYM, KEY_LCONTROL),
 	torqueRotate(Type.KEYSYM, KEY_R, CCGMods.simulated),
+	torqueReverse(Type.KEYSYM, KEY_LSHIFT, CCGMods.simulated),
 	usePhysicsStaff(CCGMods.simulated),
 	useSchematic;
 	public final Lazy<KeyMapping> keyMapping;

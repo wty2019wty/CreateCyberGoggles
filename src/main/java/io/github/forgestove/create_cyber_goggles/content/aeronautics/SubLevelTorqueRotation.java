@@ -110,7 +110,7 @@ public final class SubLevelTorqueRotation {
 		Vector3d force = axis.cross(offset, new Vector3d());
 		if (force.lengthSquared() < 1.0E-8) return;
 		force.normalize();
-		if (player.isShiftKeyDown()) force.negate();
+		if (CCGKey.torqueReverse.isDown()) force.negate();
 
 		BlockPos blockPos = hit.getBlockPos();
 		sendPunch(player, blockPos, offset, force);
@@ -176,7 +176,7 @@ public final class SubLevelTorqueRotation {
 			axis = getAxis(player, null);
 		}
 		double degrees = CCG.config.aeronautics.staffRotateDegreesPerTick;
-		if (player.isShiftKeyDown()) degrees = -degrees;
+		if (CCGKey.torqueReverse.isDown()) degrees = -degrees;
 		session.dragOrientation().premul(new Quaterniond(
 			new AxisAngle4d(Math.toRadians(degrees), axis.x, axis.y, axis.z)
 		));
