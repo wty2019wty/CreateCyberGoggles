@@ -126,13 +126,18 @@ public class CCGConfig {
 		public boolean enableStaffDragRotation = true;
 		public boolean enablePunchTorqueFallback = false;
 		@DoubleRange(min = 0.1, max = 30) public double staffRotateDegreesPerTick = 1.5;
-		public boolean torqueUseViewAxis = false;
+		public TorqueAxis torqueAxis = TorqueAxis.HIT_FACE;
 		@DoubleRange(min = 0.25, max = 4) public double torqueLeverScale = 1.0;
 		@DoubleRange(min = 1, max = 64) public double torqueMaxLever = 16;
 		public boolean torqueCancelLinear = true;
 		@IntRange(min = 1, max = 20) public int torquePairDelayTicks = 4;
 		@IntRange(min = 1, max = 100) public int torqueRepeatTicks = 4;
 		@IntRange(min = 8, max = 128) public int torqueRange = 64;
+		public enum TorqueAxis {
+			WORLD_Y,
+			VIEW,
+			HIT_FACE
+		}
 		@Category public ForceOverlay forceOverlay = new ForceOverlay();
 		public static class ForceOverlay {
 			public boolean enableForceOverlay = true;

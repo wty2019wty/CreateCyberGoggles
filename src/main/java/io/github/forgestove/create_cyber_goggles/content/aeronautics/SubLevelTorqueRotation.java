@@ -10,9 +10,11 @@ import dev.simulated_team.simulated.SimulatedClient;
 import dev.simulated_team.simulated.content.physics_staff.PhysicsStaffClientHandler.ClientDragSession;
 import dev.simulated_team.simulated.content.physics_staff.PhysicsStaffItem;
 import io.github.forgestove.create_cyber_goggles.CCG;
+import io.github.forgestove.create_cyber_goggles.CCGConfig.Aeronautics.TorqueAxis;
 import io.github.forgestove.create_cyber_goggles.foundation.events.CCGKey;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.BlockHitResult;
@@ -43,6 +45,8 @@ public final class SubLevelTorqueRotation {
 	private static long tick;
 	private static long nextPulseTick;
 	private static @Nullable PendingPulse pending;
+	private static boolean staffWasDown;
+	private static @Nullable Vector3d staffAxis;
 
 	private SubLevelTorqueRotation() {}
 
@@ -53,6 +57,8 @@ public final class SubLevelTorqueRotation {
 			pending = null;
 			wasDown = false;
 			nextPulseTick = 0;
+			staffWasDown = false;
+			staffAxis = null;
 			return;
 		}
 		// 先处理上一组冲量的第二次反向冲量
@@ -99,7 +105,7 @@ public final class SubLevelTorqueRotation {
 		// 服务端不允许拳击自己正站着的结构
 		if (target == tracking) return;
 
-		Vector3d axis = getAxis(player);
+		Vector3d axis = getAxis(player, hit.getDirection());
 		Vector3d offset = getLever(player, target, hit, axis);
 		Vector3d force = axis.cross(offset, new Vector3d());
 		if (force.lengthSquared() < 1.0E-8) return;
@@ -139,13 +145,33 @@ public final class SubLevelTorqueRotation {
 	 */
 	private static boolean handleStaffDragRotation(LocalPlayer player, boolean down) {
 		ClientDragSession session = SimulatedClient.PHYSICS_STAFF_CLIENT_HANDLER.getDragSession();
-		if (session == null) return false;
-		if (!CCG.config.aeronautics.enableStaffDragRotation) return true;
-		if (!down || mc.screen != null) return true;
-		if (!PhysicsStaffItem.isHolding(player)) return true;
+		if (session == null) {
+			staffWasDown = false;
+			staffAxis = null;
+			return false;
+		}
+		boolean pressed = down && !staffWasDown;
+		staffWasDown = down;
+		if (!CCG.config.aeronautics.enableStaffDragRotation
+			|| !down
+			|| mc.screen != null
+			|| !PhysicsStaffItem.isHolding(player)) {
+			staffAxis = null;
+			return true;
+		}
+		Vector3d axis;
+		if (CCG.config.aeronautics.torqueAxis == TorqueAxis.HIT_FACE) {
+			// 按住时锁定为按下瞬间指向方块面的法线，避免拖动过程中轴向抖动
+			if (pressed || staffAxis == null) {
+				BlockHitResult hit = getTargetHit(player);
+				staffAxis = getAxis(player, hit != null ? hit.getDirection() : null);
+			}
+			axis = staffAxis;
+		} else {
+			axis = getAxis(player, null);
+		}
 		double degrees = CCG.config.aeronautics.staffRotateDegreesPerTick;
 		if (player.isShiftKeyDown()) degrees = -degrees;
-		Vector3d axis = getAxis(player);
 		session.dragOrientation().premul(new Quaterniond(
 			new AxisAngle4d(Math.toRadians(degrees), axis.x, axis.y, axis.z)
 		));
@@ -167,12 +193,18 @@ public final class SubLevelTorqueRotation {
 	}
 
 	/**
-	 * 默认绕世界 Y 轴旋转；开启 {@code torqueUseViewAxis} 后改为绕视线方向旋转。
+	 * 根据配置选择旋转轴。
+	 * <p>
+	 * {@link TorqueAxis#HIT_FACE} 使用指向方块面的法线；没有命中面时退化为世界 Y 轴。
 	 */
-	private static Vector3d getAxis(LocalPlayer player) {
-		if (CCG.config.aeronautics.torqueUseViewAxis)
-			return JOMLConversion.toJOML(player.getLookAngle()).normalize();
-		return new Vector3d(0, 1, 0);
+	private static Vector3d getAxis(LocalPlayer player, @Nullable Direction face) {
+		return switch (CCG.config.aeronautics.torqueAxis) {
+			case VIEW -> JOMLConversion.toJOML(player.getLookAngle()).normalize();
+			case HIT_FACE -> face != null
+				? new Vector3d(face.getStepX(), face.getStepY(), face.getStepZ())
+				: new Vector3d(0, 1, 0);
+			case WORLD_Y -> new Vector3d(0, 1, 0);
+		};
 	}
 
 	/**
