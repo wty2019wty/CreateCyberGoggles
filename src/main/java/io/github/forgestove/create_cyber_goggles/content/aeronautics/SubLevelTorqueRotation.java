@@ -105,7 +105,7 @@ public final class SubLevelTorqueRotation {
 		// 服务端不允许拳击自己正站着的结构
 		if (target == tracking) return;
 
-		Vector3d axis = getAxis(player, hit.getDirection());
+		Vector3d axis = getAxis(player, getWorldFaceNormal(target, hit.getDirection()));
 		Vector3d offset = getLever(player, target, hit, axis);
 		Vector3d force = axis.cross(offset, new Vector3d());
 		if (force.lengthSquared() < 1.0E-8) return;
@@ -164,7 +164,12 @@ public final class SubLevelTorqueRotation {
 			// 按住时锁定为按下瞬间指向方块面的法线，避免拖动过程中轴向抖动
 			if (pressed || staffAxis == null) {
 				BlockHitResult hit = getTargetHit(player);
-				staffAxis = getAxis(player, hit != null ? hit.getDirection() : null);
+				if (hit != null) {
+					ClientSubLevel target = Sable.HELPER.getContainingClient(hit.getLocation());
+					staffAxis = getAxis(player, getWorldFaceNormal(target, hit.getDirection()));
+				} else {
+					staffAxis = getAxis(player, null);
+				}
 			}
 			axis = staffAxis;
 		} else {
@@ -193,16 +198,26 @@ public final class SubLevelTorqueRotation {
 	}
 
 	/**
+	 * 把子世界局部坐标系中的方块面法线转换为当前世界坐标。
+	 * <p>
+	 * Sable 的射线命中结果是 plot 局部坐标，{@link BlockHitResult#getDirection()} 也是子世界
+	 * 未旋转时的面方向，必须用当前 pose 的朝向把它转回世界坐标，不能直接当作世界法线使用。
+	 */
+	private static Vector3d getWorldFaceNormal(@Nullable SubLevel target, Direction face) {
+		Vector3d normal = new Vector3d(face.getStepX(), face.getStepY(), face.getStepZ());
+		if (target != null) target.logicalPose().transformNormal(normal);
+		return normal.normalize();
+	}
+
+	/**
 	 * 根据配置选择旋转轴。
 	 * <p>
-	 * {@link TorqueAxis#HIT_FACE} 使用指向方块面的法线；没有命中面时退化为世界 Y 轴。
+	 * {@link TorqueAxis#HIT_FACE} 使用已经转换到世界坐标的命中面法线；没有命中面时退化为世界 Y 轴。
 	 */
-	private static Vector3d getAxis(LocalPlayer player, @Nullable Direction face) {
+	private static Vector3d getAxis(LocalPlayer player, @Nullable Vector3d faceNormal) {
 		return switch (CCG.config.aeronautics.torqueAxis) {
 			case VIEW -> JOMLConversion.toJOML(player.getLookAngle()).normalize();
-			case HIT_FACE -> face != null
-				? new Vector3d(face.getStepX(), face.getStepY(), face.getStepZ())
-				: new Vector3d(0, 1, 0);
+			case HIT_FACE -> faceNormal != null ? new Vector3d(faceNormal).normalize() : new Vector3d(0, 1, 0);
 			case WORLD_Y -> new Vector3d(0, 1, 0);
 		};
 	}
@@ -213,10 +228,10 @@ public final class SubLevelTorqueRotation {
 	 * 优先使用准星实际命中的点；如果命中点离质心太近（力臂过小），则退化为玩家到质心的方向。
 	 */
 	private static Vector3d getLever(LocalPlayer player, ClientSubLevel target, BlockHitResult hit, Vector3d axis) {
-		Vector3d com = new Vector3d(target.lastPose().position());
+		Vector3d com = new Vector3d(target.logicalPose().position());
 		Vector3d hitGlobal = JOMLConversion.toJOML(hit.getLocation());
 		// 子世界射线命中点位于 plot 局部坐标，需要先转换到世界坐标
-		target.lastPose().transformPosition(hitGlobal);
+		target.logicalPose().transformPosition(hitGlobal);
 		Vector3d lever = removeAxisComponent(hitGlobal.sub(com), axis);
 		double length = lever.length();
 		if (length < 0.75) {
