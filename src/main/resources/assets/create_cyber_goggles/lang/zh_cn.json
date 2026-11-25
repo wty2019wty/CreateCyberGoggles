@@ -38,8 +38,6 @@
 	"create_cyber_goggles.config.option.aeronautics.alwaysShowMass.tooltip": "显示任何方块的质量",
 	"create_cyber_goggles.config.option.aeronautics.customHandleMoveSublevelKey": "自定义把手移动物理结构键",
 	"create_cyber_goggles.config.option.aeronautics.customHandleMoveSublevelKey.tooltip": "启用自定义把手移动物理结构键",
-	"create_cyber_goggles.config.option.aeronautics.enablePhysicsStaff": "启用物理法杖",
-	"create_cyber_goggles.config.option.aeronautics.enablePhysicsStaff.tooltip": "在任何游戏模式中都启用物理法杖",
 	"create_cyber_goggles.config.option.aeronautics.enableTorqueRotation": "启用扭矩旋转",
 	"create_cyber_goggles.config.option.aeronautics.enableTorqueRotation.tooltip": "启用按键旋转物理结构",
 	"create_cyber_goggles.config.option.aeronautics.enableStaffDragRotation": "物理杖拖动旋转",

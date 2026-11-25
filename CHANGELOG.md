@@ -1,1 +1,1 @@
-- Update flexconfig
+- Fix [#115](https://github.com/ForgeStove/CreateCyberGoggles/issues/115)
