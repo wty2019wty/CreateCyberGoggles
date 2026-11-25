@@ -1,6 +1,7 @@
 package io.github.forgestove.create_cyber_goggles.content.goggles;
 import com.simibubi.create.AllItems;
 import dev.simulated_team.simulated.index.SimItems;
+import io.github.forgestove.create_cyber_goggles.CCG;
 import io.github.forgestove.create_cyber_goggles.foundation.events.CCGKey;
 import io.github.forgestove.create_cyber_goggles.foundation.util.CCGMods;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -23,6 +24,9 @@ public class ItemSwapUtil {
 	public static int swappedOriginSlot = -1;
 	public static int swappedHandSlot = -1;
 	public static ItemStack preSwapMainHand = ItemStack.EMPTY;
+	public static boolean isSwapped() {
+		return swapped;
+	}
 	public static void tick() {
 		if (mc.screen != null) return;
 		LocalPlayer player = mc.player;
@@ -136,11 +140,17 @@ public class ItemSwapUtil {
 			swapped = true;
 			return;
 		}
-		// 3) 背包中未找到
-		if (!isCreative || mc.gameMode == null) return;
-		swapped = true;
-		inventory.setItem(handSlot, target.copy());
-		mc.gameMode.handleCreativeModeItemAdd(target, 36 + handSlot);
+		// 3) 背包中未找到 —— 回退处理
+		// 创造模式：所有物品通过数据包；生存模式：非法杖物品本地生成（释放时消失）
+		if (isCreative && mc.gameMode != null) {
+			swapped = true;
+			inventory.setItem(handSlot, target.copy());
+			mc.gameMode.handleCreativeModeItemAdd(target, 36 + handSlot);
+		} else if (!CCGMods.simulated.isLoaded() || !target.is(SimItems.PHYSICS_STAFF.get()) || CCG.config.aeronautics.enablePhysicsStaff) {
+			swapped = true;
+			swappedOriginSlot = LOCAL_SPAWN;
+			inventory.setItem(handSlot, target.copy());
+		}
 	}
 	private static LinkedHashMap<CCGKey, ItemStack> getDefaultItems() {
 		var items = new LinkedHashMap<CCGKey, ItemStack>();

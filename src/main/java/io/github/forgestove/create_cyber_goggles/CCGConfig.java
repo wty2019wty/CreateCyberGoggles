@@ -121,6 +121,7 @@ public class CCGConfig {
 		public boolean liftLimitOfHandleRange = false;
 		public boolean customHandleMoveSublevelKey = false;
 		@WarnCheat public boolean alwaysAllowRidingRope = false;
+		@WarnCheat public boolean enablePhysicsStaff = false;
 		@WarnCheat public boolean enableTorqueRotation = false;
 		public boolean enableStaffDragRotation = true;
 		public boolean enablePunchTorqueFallback = false;
