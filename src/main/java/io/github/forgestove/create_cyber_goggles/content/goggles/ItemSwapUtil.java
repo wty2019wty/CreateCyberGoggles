@@ -3,7 +3,7 @@ import com.simibubi.create.AllItems;
 import dev.simulated_team.simulated.index.SimItems;
 import io.github.forgestove.create_cyber_goggles.CCG;
 import io.github.forgestove.create_cyber_goggles.foundation.events.CCGKey;
-import io.github.forgestove.create_cyber_goggles.foundation.util.CCGMods;
+import io.github.forgestove.create_cyber_goggles.foundation.util.Mods;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.protocol.game.*;
@@ -146,7 +146,7 @@ public class ItemSwapUtil {
 			swapped = true;
 			inventory.setItem(handSlot, target.copy());
 			mc.gameMode.handleCreativeModeItemAdd(target, 36 + handSlot);
-		} else if (!CCGMods.simulated.isLoaded() || !target.is(SimItems.PHYSICS_STAFF.get()) || CCG.config.aeronautics.enablePhysicsStaff) {
+		} else if (!Mods.simulated.isLoaded() || !target.is(SimItems.PHYSICS_STAFF.get()) || CCG.config.aeronautics.enablePhysicsStaff) {
 			swapped = true;
 			swappedOriginSlot = LOCAL_SPAWN;
 			inventory.setItem(handSlot, target.copy());
@@ -156,7 +156,7 @@ public class ItemSwapUtil {
 		var items = new LinkedHashMap<CCGKey, ItemStack>();
 		items.put(CCGKey.useSchematic, AllItems.SCHEMATIC_AND_QUILL.asStack());
 		items.put(CCGKey.showSuperGlue, AllItems.SUPER_GLUE.asStack());
-		CCGMods.simulated.executeIfInstalled(() -> {
+		Mods.simulated.executeIfInstalled(() -> {
 			items.put(CCGKey.usePhysicsStaff, SimItems.PHYSICS_STAFF.asStack());
 			items.put(CCGKey.showHoneyGlue, SimItems.HONEY_GLUE.asStack());
 		});

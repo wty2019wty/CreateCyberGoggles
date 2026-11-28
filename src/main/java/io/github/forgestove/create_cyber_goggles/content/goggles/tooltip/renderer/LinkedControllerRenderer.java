@@ -3,7 +3,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
 import io.github.forgestove.create_cyber_goggles.CCG;
 import io.github.forgestove.create_cyber_goggles.api.AutoTooltipRenderer;
-import io.github.forgestove.create_cyber_goggles.foundation.util.CCGMods;
+import io.github.forgestove.create_cyber_goggles.foundation.util.Mods;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -16,12 +16,10 @@ import java.util.ArrayList;
 import static io.github.forgestove.create_cyber_goggles.foundation.util.CCGUtil.mc;
 @AutoTooltipRenderer
 public class LinkedControllerRenderer extends AbstractItemGridRenderer {
-	private static final ResourceLocation CONTROLLER_BG = CCGMods.create.rl("textures/gui/curiosities_2.png");
+	private static final ResourceLocation CONTROLLER_BG = Mods.create.rl("textures/gui/curiosities_2.png");
 	private static final int TEXTURE_SIZE = 256;
-	/** 面板裁剪区域：左上/右下两个点 */
 	private static final Point CROP_TOP_LEFT = new Point(1, 14);
 	private static final Point CROP_BOTTOM_RIGHT = new Point(170, 80);
-	/** 槽位左上角，按 buildItemGrid 槽位顺序 */
 	private static final Point[] SLOT_POINTS = {
 		new Point(12, 34),
 		new Point(36, 34),

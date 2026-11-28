@@ -17,7 +17,6 @@ import java.util.List;
 
 import static io.github.forgestove.create_cyber_goggles.foundation.util.CCGUtil.*;
 public class KeyInputEvents {
-	public static int scrollDeltaY;
 	public static void key(Key ignoredEvent) {
 		openConfigScreen();
 		previewFilterScreen();
@@ -32,7 +31,7 @@ public class KeyInputEvents {
 		if (mc.player == null) return;
 		ItemStack itemStack = getSelectedFilter();
 		if (itemStack == null) return;
-		Screen screen = FilterPreview.create(-1, mc.player.getInventory(), itemStack.copy());
+		Screen screen = FilterPreview.create(FilterPreview.previewId, mc.player.getInventory(), itemStack.copy());
 		if (screen == null) {
 			mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_BASS, 0.5F));
 			return;
@@ -51,7 +50,7 @@ public class KeyInputEvents {
 		if (tcbe == null) return;
 		if (TableClothUtil.getItems(tcbe).size() <= 1) return;
 		if (hasActivedValueBox()) return;
-		scrollDeltaY = (int) event.getScrollDeltaY();
+		TableClothUtil.scrollDeltaY = (int) event.getScrollDeltaY();
 		event.setCanceled(true);
 	}
 	private static void tryScrollClipboardPage(MouseScrollingEvent event) {

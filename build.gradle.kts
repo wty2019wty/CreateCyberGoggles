@@ -33,6 +33,7 @@ neoForge {
 			programArgument("--nogui")
 		}
 		configureEach {
+			logLevel.set(org.slf4j.event.Level.DEBUG)
 			systemProperty("terminal.jline", "true")
 			jvmArgument("-XX:+IgnoreUnrecognizedVMOptions")
 			jvmArgument("-XX:+AllowEnhancedClassRedefinition")
@@ -41,7 +42,6 @@ neoForge {
 			// jvmArgument("-XX:+UnlockCommercialFeatures") // uncomment for profiling
 		}
 	}
-	accessTransformers.publish(file("src/main/resources/META-INF/accesstransformer.cfg"))
 	mods.create(p("modId")).sourceSet(sourceSets.main.get())
 }
 repositories {
@@ -74,7 +74,6 @@ dependencies {
 	implementation("dev.eriksonn.aeronautics:aeronautics-${p("loader")}-${p("mcVersion")}:${p("areoVersion")}") { isTransitive = false }
 	implementation("dev.ryanhcode.sable:sable-${p("loader")}-${p("mcVersion")}:${p("sableVersion")}") { isTransitive = false }
 	compileOnly("dev.ryanhcode.sable-companion:sable-companion-common-${p("mcVersion")}:${p("sableCompanionVersion")}")
-	compileOnly("foundry.veil:veil-${p("loader")}-${p("mcVersion")}:${p("veilVersion")}")
 	//endregion
 	compileOnly("maven.modrinth:create-enchantment-industry:${p("ceiVersion")}")
 	compileOnly("maven.modrinth:create-dragons-plus:${p("dragonPlusVersion")}")
@@ -82,7 +81,7 @@ dependencies {
 	compileOnly("maven.modrinth:createphantom:${p("phantomVersion")}")
 	compileOnly("maven.modrinth:create-mobile-packages:${p("mcVersion")}-${p("mobilePackagesVersion")}")
 	compileOnly("ru.zznty:create_factory_abstractions-${p("mcVersion")}:${p("factoryAbstractionsVersion")}") { isTransitive = false }
-	compileOnly("mezz.jei:jei-${p("mcVersion")}-${p("loader")}:${p("jeiVersion")}")
+	implementation("mezz.jei:jei-${p("mcVersion")}-${p("loader")}:${p("jeiVersion")}")
 	compileOnly("dev.emi:emi-${p("loader")}:${p("emiVersion")}+${p("mcVersion")}")
 	compileOnly("maven.modrinth:sophisticated-core:${p("mcVersion")}-${p("sophisticatedCoreVersion")}")
 	compileOnly("org.appliedenergistics:appliedenergistics2:${p("appliedenergisticsVersion")}")
