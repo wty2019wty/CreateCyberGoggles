@@ -22,19 +22,18 @@ import static io.github.forgestove.create_cyber_goggles.foundation.util.CCGUtil.
  * {@link ConfigHandler}。因此重新启动游戏后，绑定仍然存在却没有任何动作，必须重新绑定一次。
  * <p>
  * 这里在客户端启动后为已经持久化的绑定补注册回调，行为与配置界面中的行保持一致：
- * 布尔值取反，枚举值循环到下一个。之后低频轮询，兼顾运行期间外部修改配置文件的情况。
+ * 布尔值取反，枚举值循环到下一个。只需要执行一次，之后由配置界面自身注册新绑定的回调。
  */
 public final class ConfigTriggerKeybinds {
-	private static final int CHECK_INTERVAL_TICKS = 20;
-	/** 已补注册过回调的绑定，避免每个轮询周期都覆盖 FlexConfig 自己注册的回调 */
-	private static final Set<String> REGISTERED = new HashSet<>();
-	private static int ticks;
+	private static boolean done;
 
 	private ConfigTriggerKeybinds() {}
 
 	public static void tick(Post ignoredEvent) {
-		// 首次 tick 立即执行，之后每 20 tick 检查一次
-		if (ticks++ % CHECK_INTERVAL_TICKS == 0) register();
+		// 首个客户端 tick 执行一次；此时 CCGUtil.mc 已可用，配置也已从磁盘加载
+		if (done) return;
+		done = true;
+		register();
 	}
 
 	public static void register() {
@@ -47,15 +46,12 @@ public final class ConfigTriggerKeybinds {
 			var root = handler.getConfigTree();
 			for (var entry : Map.copyOf(triggers).entrySet()) {
 				var path = entry.getKey();
-				var key = handler.getFileName() + '@' + path;
-				if (REGISTERED.contains(key)) continue;
 				var node = root.getValueNode(path);
 				if (node == null || node.isElement()) continue;
 				var type = node.getValueType();
 				if (type != boolean.class && type != Boolean.class && !type.isEnum()) continue;
 				// 保持已有的按键序列化数据，只补上缺失的回调
 				handler.setTriggerKeybind(path, entry.getValue(), () -> trigger(handler, node));
-				REGISTERED.add(key);
 			}
 		}
 	}
