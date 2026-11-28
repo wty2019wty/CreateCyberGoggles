@@ -9,6 +9,7 @@ import io.github.forgestove.create_cyber_goggles.content.goggles.tooltip.compone
 import io.github.forgestove.create_cyber_goggles.content.kinetic.*;
 import io.github.forgestove.create_cyber_goggles.content.replenish.ReplenishScreen;
 import io.github.forgestove.create_cyber_goggles.content.schematic.*;
+import io.github.forgestove.create_cyber_goggles.foundation.config.ConfigTriggerKeybinds;
 import io.github.forgestove.create_cyber_goggles.foundation.events.*;
 import io.github.forgestove.create_cyber_goggles.foundation.util.*;
 import net.neoforged.api.distmarker.Dist;
@@ -39,6 +40,7 @@ public class CCGClient {
 		IEventBus game = NeoForge.EVENT_BUS;
 		game.addListener(KeyInputEvents::key);
 		game.addListener(KeyInputEvents::mouseScroll);
+		game.addListener(ConfigTriggerKeybinds::tick);
 		game.addListener(PlayerInteractionEvents::leftClick);
 		game.addListener(PlayerInteractionEvents::rightClick);
 		game.addListener(PlayerInteractionEvents::tick);
